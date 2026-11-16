@@ -20,6 +20,8 @@ return new class extends Migration
             $table->unsignedSmallInteger('area');
             $table->string('status')->default('available');
             $table->text('description')->nullable();
+            // El texto en el que busca Larasearch: referencia, título y zona.
+            $table->searchable();
             $table->timestamps();
 
             $table->index(['operation', 'status']);

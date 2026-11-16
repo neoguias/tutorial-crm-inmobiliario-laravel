@@ -14,6 +14,8 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->text('notes')->nullable();
+            // El texto en el que busca Larasearch: nombre, email y teléfono.
+            $table->searchable();
             $table->timestamps();
         });
     }

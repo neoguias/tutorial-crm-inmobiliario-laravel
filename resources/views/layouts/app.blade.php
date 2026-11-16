@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-wire-theme="megaflow">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,5 +19,7 @@
     <main class="mx-auto max-w-6xl px-4 py-8">
         {{ $slot }}
     </main>
+
+    <x-wiretoast theme="megaflow" />
 </body>
 </html>

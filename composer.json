@@ -7,6 +7,11 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "edulazaro/larasearch": "^1.0",
+        "edulazaro/wiremodal": "^1.4",
+        "edulazaro/wirepicker": "^1.6",
+        "edulazaro/wiretables": "^1.2",
+        "edulazaro/wiretoast": "^1.2",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^4.4"

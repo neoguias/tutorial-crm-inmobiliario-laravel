@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\Operation;
 use App\Enums\PropertyStatus;
 use App\Enums\PropertyType;
+use EduLazaro\Larasearch\Concerns\HasSearch;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Property extends Model
 {
+    use HasSearch;
+
     protected $fillable = [
         'reference', 'title', 'operation', 'type', 'zone', 'price',
         'bedrooms', 'area', 'status', 'description',
@@ -23,6 +26,9 @@ class Property extends Model
         'status' => 'available',
         'bedrooms' => 0,
     ];
+
+    // Los campos que encuentra el buscador del listado.
+    protected array $searchable = ['reference', 'title', 'zone'];
 
     protected function casts(): array
     {

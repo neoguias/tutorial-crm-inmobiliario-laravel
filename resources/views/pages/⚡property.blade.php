@@ -44,11 +44,26 @@ new class extends Component
         return Contact::orderBy('name')->get();
     }
 
+    /** Los días que el inmueble ya tiene visitas, para marcarlos en el calendario. */
+    #[Computed]
+    public function busyDays(): array
+    {
+        return $this->property->visits()->with('contact')
+            ->where('scheduled_at', '>=', today())
+            ->orderBy('scheduled_at')
+            ->get()
+            ->groupBy(fn ($visit) => $visit->scheduled_at->toDateString())
+            ->map(fn ($visits) => $visits->map(fn ($visit) => $visit->scheduled_at->format('H:i').' '.$visit->contact->name)->all())
+            ->all();
+    }
+
     public function updatedStatus(): void
     {
         $this->validate(['status' => [Rule::enum(PropertyStatus::class)]]);
 
         $this->property->update(['status' => $this->status]);
+
+        $this->notify('Estado cambiado a '.mb_strtolower($this->property->status->label()).'.', 'info');
     }
 
     public function propose(int $contactId): void
@@ -63,9 +78,10 @@ new class extends Component
             'scheduled_at' => ['required', 'date', 'after:now'],
         ]);
 
-        $this->property->visits()->create($data);
+        $visit = $this->property->visits()->create($data);
 
         $this->reset('contact_id', 'scheduled_at');
+        $this->notify('Visita con '.$visit->contact->name.' el '.$visit->scheduled_at->isoFormat('dddd D [de] MMMM [a las] HH:mm').'.');
     }
 };
 ?>
@@ -123,10 +139,10 @@ new class extends Component
                 </select>
                 @error('contact_id') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             </label>
-            <label class="mt-3 block text-sm">Día y hora
-                <input type="datetime-local" wire:model="scheduled_at" class="mt-1 w-full rounded border border-slate-300 px-2 py-1.5">
-                @error('scheduled_at') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
-            </label>
+            <label for="scheduled-at" class="mt-3 block text-sm">Día y hora</label>
+            <x-wirepicker id="scheduled-at" wire:model="scheduled_at" time :step="30" default-time="10:00"
+                :min="today()->toDateString()" :marked="$this->busyDays" trigger-class="mt-1 rounded border border-slate-300 px-2 py-1.5 text-sm" />
+            @error('scheduled_at') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             <button class="mt-4 w-full rounded bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800">Guardar visita</button>
         </form>
 

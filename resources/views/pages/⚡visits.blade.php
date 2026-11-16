@@ -24,7 +24,10 @@ new #[Title('Visitas')] class extends Component
 
     public function mark(int $visitId, string $outcome): void
     {
-        Visit::findOrFail($visitId)->update(['outcome' => VisitOutcome::from($outcome)]);
+        $visit = Visit::with('contact')->findOrFail($visitId);
+        $visit->update(['outcome' => VisitOutcome::from($outcome)]);
+
+        $this->notify('Visita de '.$visit->contact->name.' anotada como «'.$visit->outcome->label().'».', 'info');
     }
 };
 ?>

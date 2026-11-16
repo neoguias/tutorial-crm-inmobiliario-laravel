@@ -93,7 +93,29 @@ class CrmTest extends TestCase
             ->set('form.area', 70)
             ->call('save')
             ->assertHasNoErrors()
-            ->assertRedirect(route('property', Property::where('reference', 'AT-9')->first()));
+            ->assertDispatched('close-wiremodal')
+            ->assertDispatched('notify')
+            ->assertSet('form.reference', '');
+
+        $this->assertTrue(Property::where('reference', 'AT-9')->exists());
+    }
+
+    public function test_the_portfolio_can_be_searched_and_sorted_by_price(): void
+    {
+        $this->property(['reference' => 'AT-1', 'title' => 'Ático con terraza', 'price' => 400000]);
+        $this->property(['reference' => 'AT-2', 'title' => 'Piso junto al mercado', 'price' => 250000]);
+        $this->property(['reference' => 'AT-3', 'title' => 'Bajo con jardín', 'zone' => 'Patraix', 'price' => 300000]);
+
+        Livewire::test('pages::properties')
+            ->set('search', 'atico')
+            ->assertSee('AT-1')
+            ->assertDontSee('AT-2');
+
+        Livewire::test('pages::properties')
+            ->call('sortBy', 'price')
+            ->call('sortBy', 'price')
+            ->assertSet('direction', 'desc')
+            ->assertSeeInOrder(['AT-1', 'AT-3', 'AT-2']);
     }
 
     public function test_a_visit_cannot_be_scheduled_in_the_past(): void
@@ -103,13 +125,13 @@ class CrmTest extends TestCase
 
         Livewire::test('pages::property', ['property' => $property])
             ->set('contact_id', $contact->id)
-            ->set('scheduled_at', now()->subDay()->format('Y-m-d\TH:i'))
+            ->set('scheduled_at', now()->subDay()->format('Y-m-d H:i'))
             ->call('schedule')
             ->assertHasErrors(['scheduled_at']);
 
         Livewire::test('pages::property', ['property' => $property])
             ->set('contact_id', $contact->id)
-            ->set('scheduled_at', now()->addDay()->format('Y-m-d\TH:i'))
+            ->set('scheduled_at', now()->addDay()->format('Y-m-d H:i'))
             ->call('schedule')
             ->assertHasNoErrors();
 
@@ -128,6 +150,10 @@ class CrmTest extends TestCase
         $contact = Contact::where('name', 'Ana Ruiz')->first();
         $this->assertSame(1000, $contact->demands->first()->max_price);
         $this->assertNull($contact->demands->first()->zone);
+
+        Livewire::test('pages::contacts')
+            ->set('search', 'ana')
+            ->assertSee('Ana Ruiz');
     }
 
     public function test_the_agenda_records_how_a_visit_went(): void
