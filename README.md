@@ -35,6 +35,10 @@ Requiere PHP 8.3 y Node 20 o superior.
 - [`config/crm.php`](config/crm.php): el nombre de la agencia y las zonas en las que trabaja.
 - [`tests/Feature/CrmTest.php`](tests/Feature/CrmTest.php): el cruce, los formularios y la agenda.
 
+## Autor
+
+Creado por [Edu Lázaro](https://edulazaro.com) para [Neoguias](https://www.neoguias.com).
+
 ## Licencia
 
-MIT.
+Este ejemplo es software libre con [licencia MIT](LICENSE).
