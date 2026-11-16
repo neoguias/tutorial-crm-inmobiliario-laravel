@@ -140,7 +140,9 @@ class CrmTest extends TestCase
 
         Livewire::test('pages::visits')
             ->assertSee('Piso de prueba')
-            ->call('mark', $visit->id, 'interested');
+            ->assertSee('Descartado')
+            ->call('mark', $visit->id, 'interested')
+            ->assertDontSee('Descartado');
 
         $this->assertSame(VisitOutcome::Interested, $visit->fresh()->outcome);
     }

@@ -45,9 +45,12 @@ new #[Title('Visitas')] class extends Component
                             <a href="{{ route('property', $visit->property) }}" wire:navigate class="font-medium text-teal-700 hover:underline">{{ $visit->property->title }}</a>
                             <div class="text-xs text-slate-500">{{ $visit->contact->name }} · {{ $visit->property->zone }}</div>
                         </div>
-                        <span class="text-xs text-slate-500">{{ $visit->outcome->label() }}</span>
-                        <button wire:click="mark({{ $visit->id }}, 'interested')" class="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Le interesa</button>
-                        <button wire:click="mark({{ $visit->id }}, 'discarded')" class="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Descartado</button>
+                        @if ($visit->outcome === \App\Enums\VisitOutcome::Pending)
+                            <button wire:click="mark({{ $visit->id }}, 'interested')" class="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Le interesa</button>
+                            <button wire:click="mark({{ $visit->id }}, 'discarded')" class="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Descartado</button>
+                        @else
+                            <span @class(['rounded-full px-2 py-0.5 text-xs', 'bg-teal-50 text-teal-800' => $visit->outcome === \App\Enums\VisitOutcome::Interested, 'bg-slate-100 text-slate-500' => $visit->outcome === \App\Enums\VisitOutcome::Discarded])>{{ $visit->outcome->label() }}</span>
+                        @endif
                     </li>
                 @endforeach
             </ul>
