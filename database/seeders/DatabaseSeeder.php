@@ -6,6 +6,8 @@ use App\Models\Contact;
 use App\Models\Property;
 use App\Models\Visit;
 use Illuminate\Database\Seeder;
+use Illuminate\Http\File;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Datos de ejemplo de Atalaya Inmobiliaria: una cartera pequeña de inmuebles, unos cuantos
@@ -28,8 +30,15 @@ class DatabaseSeeder extends Seeder
             ['AT-110', 'Bajo con jardín', 'sale', 'flat', 'Patraix', 239000, 2, 88],
         ];
 
+        // Las fotos de ejemplo están en database/seeders/photos. Antes de copiarlas borramos las de
+        // una carga anterior.
+        Storage::disk('public')->deleteDirectory('properties');
+
         foreach ($properties as [$reference, $title, $operation, $type, $zone, $price, $bedrooms, $area]) {
-            Property::create(compact('reference', 'title', 'operation', 'type', 'zone', 'price', 'bedrooms', 'area'));
+            $property = Property::create(compact('reference', 'title', 'operation', 'type', 'zone', 'price', 'bedrooms', 'area'));
+
+            $path = Storage::disk('public')->putFile("properties/{$property->id}", new File(__DIR__."/photos/{$reference}.jpg"));
+            $property->photos()->create(['path' => $path]);
         }
 
         $lucia = Contact::create(['name' => 'Lucía Ferrer', 'email' => 'lucia@example.test', 'phone' => '600 111 222']);

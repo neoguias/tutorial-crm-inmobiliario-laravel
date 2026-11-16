@@ -7,14 +7,20 @@ use App\Models\Property;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 /**
- * La ficha de un inmueble: sus datos, los clientes cuya demanda encaja con él y las visitas,
- * con un formulario para programar la siguiente.
+ * La ficha de un inmueble: sus datos y sus fotos, los clientes cuya demanda encaja con él y
+ * las visitas, con un formulario para programar la siguiente.
  */
 new class extends Component
 {
+    use WithFileUploads;
+
     public Property $property;
+
+    /** Las fotos elegidas en el formulario, todavía sin guardar. */
+    public array $uploads = [];
 
     public string $status = '';
 
@@ -66,6 +72,33 @@ new class extends Component
         $this->notify('Estado cambiado a '.mb_strtolower($this->property->status->label()).'.', 'info');
     }
 
+    public function addPhotos(): void
+    {
+        $this->validate([
+            'uploads' => ['required', 'array', 'max:6'],
+            'uploads.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        $position = (int) $this->property->photos()->max('position');
+
+        foreach ($this->uploads as $upload) {
+            $this->property->photos()->create([
+                'path' => $upload->store("properties/{$this->property->id}", 'public'),
+                'position' => ++$position,
+            ]);
+        }
+
+        $this->notify(count($this->uploads) === 1 ? 'Foto añadida.' : count($this->uploads).' fotos añadidas.');
+        $this->reset('uploads');
+    }
+
+    public function deletePhoto(int $photoId): void
+    {
+        $this->property->photos()->findOrFail($photoId)->delete();
+
+        $this->notify('Foto eliminada.', 'info');
+    }
+
     public function propose(int $contactId): void
     {
         $this->contact_id = $contactId;
@@ -97,7 +130,56 @@ new class extends Component
             <strong>{{ $property->priceLabel() }}</strong>
         </p>
 
-        <label class="mt-4 inline-flex items-center gap-2 text-sm">Estado
+        <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            @foreach ($property->photos as $photo)
+                <figure wire:key="photo-{{ $photo->id }}" class="group relative">
+                    <img src="{{ $photo->url() }}" alt="{{ $property->title }}" class="aspect-[3/2] w-full rounded-lg object-cover">
+                    @if ($loop->first)
+                        <span class="absolute left-2 top-2 rounded bg-white/90 px-2 py-0.5 text-xs font-medium">Portada</span>
+                    @endif
+                    <button type="button" x-on:click="Wiremodal.open('delete-photo').then(result => result === 'confirmed' && $wire.deletePhoto({{ $photo->id }}))"
+                        class="absolute right-2 top-2 rounded bg-white/90 px-2 py-0.5 text-xs text-red-700 opacity-0 group-hover:opacity-100">
+                        Eliminar
+                    </button>
+                </figure>
+            @endforeach
+        </div>
+
+        <form wire:submit="addPhotos" class="mt-3 flex flex-wrap items-center gap-3 text-sm">
+            <input type="file" wire:model="uploads" multiple accept="image/jpeg,image/png,image/webp"
+                class="text-sm file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 hover:file:bg-slate-200">
+            <span wire:loading wire:target="uploads" class="text-slate-500">Subiendo…</span>
+            @if ($uploads)
+                <button wire:loading.attr="disabled" class="rounded bg-teal-700 px-3 py-1.5 font-medium text-white hover:bg-teal-800">
+                    Guardar {{ count($uploads) === 1 ? 'foto' : count($uploads).' fotos' }}
+                </button>
+            @endif
+            @error('uploads') <span class="w-full text-xs text-red-600">{{ $message }}</span> @enderror
+            @error('uploads.*') <span class="w-full text-xs text-red-600">{{ $message }}</span> @enderror
+        </form>
+
+        <x-wiremodal name="delete-photo" title="¿Eliminar esta foto?" size="sm">
+            <x-slot:body>
+                <p class="text-sm text-slate-600">Se borrará también el archivo. Si era la portada, la siguiente foto ocupará su lugar.</p>
+            </x-slot:body>
+            <x-slot:footer>
+                <button type="button" data-wm-dismiss class="rounded border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">Cancelar</button>
+                <button type="button" onclick="Wiremodal.close('delete-photo', 'confirmed')" class="rounded bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800">Eliminar</button>
+            </x-slot:footer>
+        </x-wiremodal>
+
+        @if ($uploads)
+            <div class="mt-3 flex flex-wrap gap-2">
+                @foreach ($uploads as $upload)
+                    {{-- Solo las imágenes tienen vista previa: un PDF elegido por error no la tiene. --}}
+                    @if ($upload->isPreviewable())
+                        <img src="{{ $upload->temporaryUrl() }}" alt="" class="h-16 w-24 rounded object-cover opacity-80">
+                    @endif
+                @endforeach
+            </div>
+        @endif
+
+        <label class="mt-6 inline-flex items-center gap-2 text-sm">Estado
             <select wire:model.live="status" class="rounded border border-slate-300 px-2 py-1.5 text-sm">
                 @foreach (PropertyStatus::cases() as $case)
                     <option value="{{ $case->value }}">{{ $case->label() }}</option>

@@ -41,6 +41,7 @@ new #[Title('Inmuebles')] class extends Component
     public function properties()
     {
         return Property::query()
+            ->with('cover')
             ->searchText($this->search)
             ->when($this->operation, fn ($q) => $q->where('operation', $this->operation))
             ->when($this->zone, fn ($q) => $q->where('zone', $this->zone))
@@ -118,6 +119,13 @@ new #[Title('Inmuebles')] class extends Component
             <x-wiretable.row :href="route('property', $property)" navigate wire:key="property-{{ $property->id }}">
                 <x-wiretable.td>
                     <x-wiretable.primary :title="$property->title" :subtitle="$property->reference.' · '.$property->type->label().($property->bedrooms ? ' · '.$property->bedrooms.' dorm.' : '')">
+                        <x-slot:leading>
+                            @if ($property->cover)
+                                <img src="{{ $property->cover->url() }}" alt="" class="h-12 w-18 rounded object-cover">
+                            @else
+                                <div class="h-12 w-18 rounded bg-slate-100"></div>
+                            @endif
+                        </x-slot:leading>
                         <p class="text-xs text-slate-500 md:hidden">{{ $property->zone }} · {{ $property->status->label() }}</p>
                     </x-wiretable.primary>
                 </x-wiretable.td>

@@ -9,6 +9,8 @@ use App\Models\Demand;
 use App\Models\Property;
 use App\Models\Visit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -22,6 +24,9 @@ class CrmTest extends TestCase
 
         // Las páginas usan @vite: sin esto los tests pedirían haber compilado antes los assets.
         $this->withoutVite();
+
+        // Un disco falso: las fotos de los tests no tocan las de storage/app/public.
+        Storage::fake('public');
     }
 
     private function property(array $overrides = []): Property
@@ -154,6 +159,40 @@ class CrmTest extends TestCase
         Livewire::test('pages::contacts')
             ->set('search', 'ana')
             ->assertSee('Ana Ruiz');
+    }
+
+    public function test_photos_are_uploaded_and_the_first_one_is_the_cover(): void
+    {
+        $property = $this->property();
+
+        Livewire::test('pages::property', ['property' => $property])
+            ->set('uploads', [UploadedFile::fake()->image('salon.jpg'), UploadedFile::fake()->image('cocina.jpg')])
+            ->call('addPhotos')
+            ->assertHasNoErrors()
+            ->assertSet('uploads', []);
+
+        $photos = $property->photos()->get();
+        $this->assertCount(2, $photos);
+        $this->assertSame($photos->first()->id, $property->cover->id);
+        Storage::disk('public')->assertExists($photos->pluck('path')->all());
+    }
+
+    public function test_only_images_are_accepted_and_deleting_a_photo_removes_its_file(): void
+    {
+        $property = $this->property();
+
+        Livewire::test('pages::property', ['property' => $property])
+            ->set('uploads', [UploadedFile::fake()->create('contrato.pdf', 100, 'application/pdf')])
+            ->call('addPhotos')
+            ->assertHasErrors(['uploads.0']);
+
+        $photo = $property->photos()->create(['path' => UploadedFile::fake()->image('salon.jpg')->store('properties', 'public')]);
+
+        Livewire::test('pages::property', ['property' => $property])
+            ->call('deletePhoto', $photo->id);
+
+        $this->assertSame(0, $property->photos()->count());
+        Storage::disk('public')->assertMissing($photo->path);
     }
 
     public function test_the_agenda_records_how_a_visit_went(): void
