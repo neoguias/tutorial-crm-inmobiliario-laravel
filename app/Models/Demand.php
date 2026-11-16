@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Operation;
+use App\Enums\PropertyStatus;
 use App\Enums\PropertyType;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,6 +47,13 @@ class Demand extends Model
     #[Scope]
     protected function matching(Builder $query, Property $property): void
     {
+        // Un inmueble reservado o vendido ya no le sirve a nadie.
+        if ($property->status !== PropertyStatus::Available) {
+            $query->whereIn('id', []);
+
+            return;
+        }
+
         $query->where('active', true)
             ->where('operation', $property->operation)
             ->where('max_price', '>=', $property->price)

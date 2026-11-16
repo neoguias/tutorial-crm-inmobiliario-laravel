@@ -50,6 +50,14 @@ class CrmTest extends TestCase
         $this->assertTrue(Demand::matching($property)->whereKey($demand->id)->exists());
     }
 
+    public function test_a_reserved_property_has_no_interested_clients(): void
+    {
+        $property = $this->property(['status' => PropertyStatus::Reserved]);
+        $this->demand();
+
+        $this->assertSame(0, Demand::matching($property)->count());
+    }
+
     public function test_a_demand_without_type_or_zone_accepts_any(): void
     {
         $property = $this->property(['type' => 'house', 'zone' => 'Patraix']);
