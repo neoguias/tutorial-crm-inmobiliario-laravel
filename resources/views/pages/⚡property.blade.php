@@ -171,7 +171,7 @@ new class extends Component
         @if ($uploads)
             <div class="mt-3 flex flex-wrap gap-2">
                 @foreach ($uploads as $upload)
-                    {{-- Solo las imágenes tienen vista previa: un PDF elegido por error no la tiene. --}}
+                    {{-- Un PDF elegido por error no tiene vista previa, solo las imágenes. --}}
                     @if ($upload->isPreviewable())
                         <img src="{{ $upload->temporaryUrl() }}" alt="" class="h-16 w-24 rounded object-cover opacity-80">
                     @endif

@@ -25,7 +25,7 @@ class CrmTest extends TestCase
         // Las páginas usan @vite: sin esto los tests pedirían haber compilado antes los assets.
         $this->withoutVite();
 
-        // Un disco falso: las fotos de los tests no tocan las de storage/app/public.
+        // Con un disco falso, las fotos de los tests no tocan las de storage/app/public.
         Storage::fake('public');
     }
 
